@@ -361,35 +361,91 @@ export const useAppStore = create<AppState>((set, get) => {
       }));
 
       try {
+        const queryLower = query.toLowerCase();
+
+        // Infer active service and incident context from multi-turn history
+        let inferredService: string | undefined;
+        let inferredIncidentId: string | undefined;
+
+        for (let i = priorHistory.length - 1; i >= 0; i--) {
+          const msg = priorHistory[i];
+          if (msg.agentResponse?.historicalEvidence?.length) {
+            inferredIncidentId = msg.agentResponse.historicalEvidence[0].incidentId;
+          }
+          const text = (msg.content || '').toLowerCase();
+          for (const inc of get().incidents) {
+            if (text.includes(inc.id.toLowerCase())) {
+              inferredIncidentId = inc.id;
+              inferredService = inc.service;
+              break;
+            }
+            if (text.includes(inc.service.toLowerCase())) {
+              inferredService = inc.service;
+              break;
+            }
+          }
+          if (inferredService) break;
+        }
+
+        // Check if query explicitly mentions an incident or service
+        let activeService = inferredService;
+        let activeIncidentId = inferredIncidentId;
+
+        for (const inc of get().incidents) {
+          if (queryLower.includes(inc.id.toLowerCase())) {
+            activeIncidentId = inc.id;
+            activeService = inc.service;
+            break;
+          }
+          if (queryLower.includes(inc.service.toLowerCase())) {
+            activeService = inc.service;
+            break;
+          }
+        }
+
+        if (!activeService) {
+          if (queryLower.includes('payment')) activeService = 'payment-api';
+          else if (queryLower.includes('auth')) activeService = 'auth-service';
+          else if (queryLower.includes('checkout')) activeService = 'checkout-service';
+          else if (queryLower.includes('notification')) activeService = 'notification-worker';
+          else if (queryLower.includes('proxy') || queryLower.includes('database')) activeService = 'database-proxy';
+          else activeService = 'payment-api';
+        }
+
+        // Context-expanded recall query for Hindsight
+        const isReferential =
+          queryLower.includes('this') ||
+          queryLower.includes('it') ||
+          queryLower.includes('future') ||
+          queryLower.includes('prevent') ||
+          queryLower.includes('issue') ||
+          queryLower.includes('incident');
+
+        const recallQuery =
+          isReferential && activeService
+            ? `${query} ${activeService} ${activeIncidentId || ''}`.trim()
+            : query;
+
         // 1. Recall relevant memories from Hindsight
-        const recalled = await get().memoryService.recallByQuery(query, get().config);
+        const recalled = await get().memoryService.recallByQuery(recallQuery, get().config);
         set({ recalledMemories: recalled });
 
-        // 2. Identify if any existing incident matches the topic
-        const queryLower = query.toLowerCase();
-        const matchedIncident = get().incidents.find(
+        // 2. Identify base incident for telemetry and symptoms
+        const baseIncident = get().incidents.find(
           (inc) =>
-            queryLower.includes(inc.service.toLowerCase()) ||
-            queryLower.includes(inc.id.toLowerCase())
+            (activeIncidentId && inc.id.toLowerCase() === activeIncidentId.toLowerCase()) ||
+            inc.service.toLowerCase() === activeService.toLowerCase()
         );
 
-        const contextIncident: Incident = matchedIncident
+        const contextIncident: Incident = baseIncident
           ? {
-              ...matchedIncident,
-              description: `User Inquiry: ${query}\nReference service: ${matchedIncident.service}`,
+              ...baseIncident,
+              description: `User Inquiry: ${query}\nService context: ${baseIncident.service} (${baseIncident.title})`,
             }
           : {
-              id: 'ASK-AGENT',
+              id: activeIncidentId || 'ASK-AGENT',
               title: query,
-              service: queryLower.includes('payment')
-                ? 'payment-api'
-                : queryLower.includes('auth')
-                ? 'auth-service'
-                : queryLower.includes('checkout')
-                ? 'checkout-service'
-                : queryLower.includes('notification')
-                ? 'notification-worker'
-                : 'infrastructure',
+              service: activeService,
               severity: 'SEV-2',
               status: 'investigating',
               description: query,

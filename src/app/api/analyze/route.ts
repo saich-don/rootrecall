@@ -10,6 +10,7 @@ import type {
   RecalledMemory,
   AgentResponse,
 } from '@/lib/types';
+import { AgentService } from '@/lib/agent/agent-service';
 
 function buildLLMPrompt(
   incident: Incident,
@@ -54,9 +55,9 @@ function buildLLMPrompt(
 
   return `You are RootRecall, an AI incident-response memory agent for DevOps and software engineers.
 Core principle: "Don't solve the same incident from scratch twice."
-You have access to current incident data AND persistent organizational memory recalled through Hindsight.
+You have direct semantic access to Hindsight organizational memory.
 
-CURRENT INCIDENT:
+CURRENT INCIDENT CONTEXT:
 ID: ${incident.id}
 Title: ${incident.title}
 Service: ${incident.service}
@@ -75,15 +76,11 @@ CURRENT USER QUESTION:
 ${userQuery || 'Initial incident analysis: Assess likely causes, triage steps, and diagnostic commands.'}
 
 CRITICAL INSTRUCTIONS:
-1. Always maintain multi-turn conversational coherence with the prior turns.
-2. If Hindsight recalled historical memory (especially high-similarity incidents like INC-0971):
-   - Explicitly cite the historical incident ID, what root cause occurred previously, and what lessons/resolutions worked.
-   - Ground your recommendations in previous lessons learned.
-3. If no historical memory exists:
-   - Provide standard methodical incident response investigation based on reported symptoms.
-   - Note that no historical precedent was found in organizational memory.
-4. Distinguish between current symptoms, historical evidence, and recommendations.
-5. Provide actionable, read-only diagnostic commands (e.g. kubectl, sql queries, curl).
+1. Directly answer the user's specific prompt (e.g. if asking about prevention, focus on architectural safeguards, canary gates, and alert thresholds; if asking about root cause, explain the technical failure chain; if asking about triage, provide a prioritized checklist).
+2. Ground your reasoning in the recalled Hindsight memories, explicitly citing historical incident IDs (e.g. INC-0971) and what lessons were retained.
+3. Be conversational, direct, and actionable like a seasoned Principal DevOps / SRE engineer. Avoid generic canned disclaimers or repeating the exact same template.
+4. Distinguish between current symptoms, historical memory evidence, and recommendations.
+5. Provide actionable, read-only diagnostic commands (e.g. kubectl, sql queries).
 
 Respond ONLY with a valid JSON object matching this exact schema (no markdown formatting, no text before or after):
 {
@@ -97,13 +94,13 @@ Respond ONLY with a valid JSON object matching this exact schema (no markdown fo
       "incidentId": "INC-XXXX",
       "incidentTitle": "Title of recalled incident",
       "rootCause": "Root cause from memory",
-      "relevance": "Why this historical incident matters to the current failure",
+      "relevance": "Why this historical incident matters to the current question",
       "similarity": "high" | "medium" | "low"
     }
   ],
   "recommendations": [
     {
-      "step": "Specific diagnostic or mitigation step",
+      "step": "Specific diagnostic, prevention, or mitigation step",
       "rationale": "Why to take this step",
       "priority": "high" | "medium" | "low"
     }
@@ -172,15 +169,15 @@ async function callLLM(
     }
 
     case 'google': {
-      const preferred = model || 'gemini-3.7-flash';
+      const preferred = model || 'gemini-3.5-flash-lite';
       const candidateModels = Array.from(
         new Set([
-          'gemini-flash-latest',
           preferred,
-          'gemini-3.7-flash',
-          'gemini-3.6-flash',
+          'gemini-3.5-flash-lite',
           'gemini-3.5-flash',
-          'gemma-4-31b-it',
+          'gemini-flash-latest',
+          'gemini-3.8-flash',
+          'gemini-3.7-flash',
         ])
       );
 
@@ -193,6 +190,7 @@ async function callLLM(
           const res = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: AbortSignal.timeout(6000),
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
@@ -277,35 +275,54 @@ export async function POST(req: NextRequest) {
     const model = config?.llm?.model || process.env.LLM_MODEL || '';
     const baseUrl = config?.llm?.baseUrl || process.env.LLM_BASE_URL || '';
 
-    // If no provider/key is configured, return 422 so client cleanly uses deterministic fallback
+    // If no provider/key is configured, synthesize via local reasoning engine
     if (!apiKey && provider !== 'ollama') {
-      return NextResponse.json({ error: 'llm-not-configured' }, { status: 422 });
+      const agentService = new AgentService();
+      const fallbackResponse = agentService.analyzeLocally(
+        incident,
+        memories || [],
+        userQuery,
+        conversationHistory
+      );
+      return NextResponse.json({ response: fallbackResponse, provider: 'reasoning-engine' });
     }
 
     const prompt = buildLLMPrompt(incident, memories, userQuery, conversationHistory);
-    const rawText = await callLLM(prompt, provider, model, apiKey, baseUrl);
 
-    let parsed: AgentResponse;
     try {
-      parsed = JSON.parse(cleanJson(rawText));
-    } catch {
-      return NextResponse.json({ error: 'parse-failed', raw: rawText }, { status: 422 });
-    }
+      const rawText = await callLLM(prompt, provider, model, apiKey, baseUrl);
+      const parsed: AgentResponse = JSON.parse(cleanJson(rawText));
 
-    // Ensure shape guarantees
-    parsed.memoryInfluenced = (memories && memories.length > 0) || false;
-    parsed.generatedAt = new Date().toISOString();
-    if (!parsed.assessment) {
-      parsed.assessment = { summary: 'Analysis completed.', likelyCauses: [], confidence: 'medium' };
-    }
-    if (!Array.isArray(parsed.assessment.likelyCauses)) parsed.assessment.likelyCauses = [];
-    if (!Array.isArray(parsed.recommendations)) parsed.recommendations = [];
-    if (!Array.isArray(parsed.suggestedCommands)) parsed.suggestedCommands = [];
-    if (!Array.isArray(parsed.historicalEvidence)) parsed.historicalEvidence = [];
+      // Ensure shape guarantees
+      parsed.memoryInfluenced = (memories && memories.length > 0) || false;
+      parsed.generatedAt = new Date().toISOString();
+      if (!parsed.assessment) {
+        parsed.assessment = { summary: 'Analysis completed.', likelyCauses: [], confidence: 'medium' };
+      }
+      if (!Array.isArray(parsed.assessment.likelyCauses)) parsed.assessment.likelyCauses = [];
+      if (!Array.isArray(parsed.recommendations)) parsed.recommendations = [];
+      if (!Array.isArray(parsed.suggestedCommands)) parsed.suggestedCommands = [];
+      if (!Array.isArray(parsed.historicalEvidence)) parsed.historicalEvidence = [];
 
-    return NextResponse.json({ response: parsed, provider, model });
+      return NextResponse.json({ response: parsed, provider, model });
+    } catch (llmErr: any) {
+      console.warn('[/api/analyze] LLM call or parse failed, using contextual reasoning engine:', llmErr.message);
+      const agentService = new AgentService();
+      const synthesized = agentService.analyzeLocally(
+        incident,
+        memories || [],
+        userQuery,
+        conversationHistory
+      );
+      return NextResponse.json({
+        response: synthesized,
+        provider: `${provider} (synthesizer-active)`,
+        model: 'rootrecall-reasoning-engine',
+        warning: llmErr.message,
+      });
+    }
   } catch (err: any) {
-    console.error('[/api/analyze]', err);
+    console.error('[/api/analyze] General error:', err);
     return NextResponse.json({ error: err.message || String(err) }, { status: 500 });
   }
 }

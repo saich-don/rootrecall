@@ -133,7 +133,7 @@ export class MemoryService {
         if (
           text.includes(mem.sourceIncidentId) ||
           text.includes(mem.sourceIncidentTitle) ||
-          text.includes(mem.service)
+          (text.includes(`SERVICE: ${mem.service}`) && incident.service === mem.service)
         ) {
           if (mem.sourceIncidentId !== incident.id) {
             mergedMap.set(mem.sourceIncidentId, {
@@ -233,13 +233,20 @@ export class MemoryService {
       for (const mem of this.localMemories) {
         if (
           text.includes(mem.sourceIncidentId) ||
-          text.includes(mem.sourceIncidentTitle) ||
-          text.includes(mem.service)
+          text.includes(mem.sourceIncidentTitle)
         ) {
+          const isDirectMatch =
+            queryLower.includes(mem.service.toLowerCase()) ||
+            queryLower.includes(mem.sourceIncidentId.toLowerCase()) ||
+            mem.keywords.some((k) => queryLower.includes(k.toLowerCase()));
+
+          const similarity: 'high' | 'medium' | 'low' = isDirectMatch ? 'high' : 'medium';
           matched.set(mem.sourceIncidentId, {
             memory: mem,
-            similarity: 'high',
-            relevanceReason: 'Direct semantic match from Hindsight memory bank.',
+            similarity,
+            relevanceReason: isDirectMatch
+              ? 'Direct semantic match from Hindsight memory bank.'
+              : 'Related context recalled from Hindsight memory bank.',
           });
           found = true;
         }
@@ -248,32 +255,40 @@ export class MemoryService {
         const parsed = this.parseRetainedText(text, 'QUERY');
         if (parsed) {
           this.localMemories.push(parsed);
+          const isDirectMatch =
+            queryLower.includes(parsed.service.toLowerCase()) ||
+            queryLower.includes(parsed.sourceIncidentId.toLowerCase());
           matched.set(parsed.sourceIncidentId, {
             memory: parsed,
-            similarity: 'high',
+            similarity: isDirectMatch ? 'high' : 'medium',
             relevanceReason: 'Hindsight semantic memory recalled from persistent cloud bank.',
           });
         }
       }
     }
 
-    // Fallback: if query didn't match anything specific, return top 2 recent memories as context
-    if (matched.size === 0 && this.localMemories.length > 0) {
-      for (const mem of this.localMemories.slice(0, 2)) {
-        matched.set(mem.sourceIncidentId, {
-          memory: mem,
-          similarity: 'low',
-          relevanceReason: 'Recent organizational memory baseline.',
-        });
-      }
+    // Filter: If we have high or medium matches, don't include low-relevance noise
+    let results = Array.from(matched.values());
+    const hasStrongMatch = results.some((m) => m.similarity === 'high' || m.similarity === 'medium');
+    if (hasStrongMatch) {
+      results = results.filter((m) => m.similarity !== 'low');
     }
 
-    return Array.from(matched.values())
+    // Fallback: if query didn't match anything specific, return top 1 recent memory as context
+    if (results.length === 0 && this.localMemories.length > 0) {
+      results.push({
+        memory: this.localMemories[0],
+        similarity: 'low',
+        relevanceReason: 'Organizational memory baseline context.',
+      });
+    }
+
+    return results
       .sort((a, b) => {
         const order = { high: 0, medium: 1, low: 2 };
         return order[a.similarity] - order[b.similarity];
       })
-      .slice(0, 5);
+      .slice(0, 3);
   }
 
   /**
