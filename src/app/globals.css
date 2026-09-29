@@ -1,0 +1,730 @@
+@import "tailwindcss";
+
+/* ============================================================
+   RootRecall — Design System
+   ============================================================ */
+
+@theme {
+  /* Brand Colors */
+  --color-brand-50: oklch(0.97 0.01 250);
+  --color-brand-100: oklch(0.93 0.03 250);
+  --color-brand-200: oklch(0.85 0.06 250);
+  --color-brand-300: oklch(0.75 0.1 250);
+  --color-brand-400: oklch(0.65 0.15 255);
+  --color-brand-500: oklch(0.55 0.2 260);
+  --color-brand-600: oklch(0.48 0.2 260);
+  --color-brand-700: oklch(0.4 0.18 260);
+
+  /* Surface Colors */
+  --color-surface-0: oklch(0.13 0.01 250);
+  --color-surface-1: oklch(0.16 0.01 250);
+  --color-surface-2: oklch(0.19 0.01 250);
+  --color-surface-3: oklch(0.22 0.01 250);
+  --color-surface-4: oklch(0.25 0.01 250);
+
+  /* Border */
+  --color-border-subtle: oklch(0.25 0.01 250);
+  --color-border-default: oklch(0.3 0.01 250);
+  --color-border-strong: oklch(0.4 0.02 250);
+
+  /* Text */
+  --color-text-primary: oklch(0.95 0.01 250);
+  --color-text-secondary: oklch(0.7 0.01 250);
+  --color-text-muted: oklch(0.5 0.01 250);
+
+  /* Semantic Status */
+  --color-sev-1: oklch(0.65 0.25 25);
+  --color-sev-2: oklch(0.75 0.18 55);
+  --color-sev-3: oklch(0.8 0.15 90);
+  --color-sev-4: oklch(0.7 0.1 250);
+
+  --color-status-resolved: oklch(0.7 0.18 155);
+  --color-status-investigating: oklch(0.75 0.18 55);
+  --color-status-detected: oklch(0.65 0.25 25);
+  --color-status-mitigating: oklch(0.7 0.15 250);
+
+  /* Memory / AI accent */
+  --color-memory: oklch(0.65 0.2 290);
+  --color-ai: oklch(0.6 0.18 260);
+
+  /* Fonts */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+/* ============================================================
+   Base Styles
+   ============================================================ */
+
+html {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+  
+  /* Brand Colors remain similar but potentially adjusted if needed */
+  
+  /* Surface Colors - Light Mode (Cool white/gray with slight blue/indigo tint) */
+  --color-surface-0: oklch(0.98 0.01 250);
+  --color-surface-1: oklch(0.96 0.01 250);
+  --color-surface-2: oklch(0.94 0.02 250);
+  --color-surface-3: oklch(0.92 0.02 250);
+  --color-surface-4: oklch(0.90 0.02 250);
+
+  /* Border */
+  --color-border-subtle: oklch(0.90 0.02 250);
+  --color-border-default: oklch(0.85 0.02 250);
+  --color-border-strong: oklch(0.75 0.02 250);
+
+  /* Text */
+  --color-text-primary: oklch(0.15 0.02 250);
+  --color-text-secondary: oklch(0.40 0.02 250);
+  --color-text-muted: oklch(0.55 0.02 250);
+
+  /* Semantic Status */
+  /* Re-adjust for better contrast in light mode */
+  --color-sev-1: oklch(0.55 0.25 25);
+  --color-sev-2: oklch(0.65 0.18 55);
+  --color-sev-3: oklch(0.70 0.15 90);
+  --color-sev-4: oklch(0.60 0.1 250);
+
+  --color-status-resolved: oklch(0.55 0.18 155);
+  --color-status-investigating: oklch(0.60 0.18 55);
+  --color-status-detected: oklch(0.55 0.25 25);
+  --color-status-mitigating: oklch(0.55 0.15 250);
+
+  /* Memory / AI accent */
+  --color-memory: oklch(0.55 0.2 290);
+  --color-ai: oklch(0.50 0.18 260);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-surface-0);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-subtle);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-default);
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.2 290 / 0); }
+  50% { box-shadow: 0 0 12px 4px oklch(0.65 0.2 290 / 0.3); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out both;
+}
+
+.animate-slide-in {
+  animation: slide-in-right 0.3s ease-out both;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-2) 25%,
+    var(--color-surface-3) 50%,
+    var(--color-surface-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ============================================================
+   Component Utilities
+   ============================================================ */
+
+.glass-panel {
+  background: oklch(0.16 0.01 250 / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+}
+
+.card {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  border-color: var(--color-border-default);
+}
+
+.card-interactive:hover {
+  border-color: var(--color-brand-400);
+  box-shadow: 0 0 0 1px var(--color-brand-400);
+}
+
+/* Status badge styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-sev1 { background: oklch(0.65 0.25 25 / 0.15); color: var(--color-sev-1); }
+.badge-sev2 { background: oklch(0.75 0.18 55 / 0.15); color: var(--color-sev-2); }
+.badge-sev3 { background: oklch(0.8 0.15 90 / 0.15); color: var(--color-sev-3); }
+.badge-sev4 { background: oklch(0.7 0.1 250 / 0.15); color: var(--color-sev-4); }
+
+.badge-resolved { background: oklch(0.7 0.18 155 / 0.15); color: var(--color-status-resolved); }
+.badge-investigating { background: oklch(0.75 0.18 55 / 0.15); color: var(--color-status-investigating); }
+.badge-detected { background: oklch(0.65 0.25 25 / 0.15); color: var(--color-status-detected); }
+.badge-mitigating { background: oklch(0.7 0.15 250 / 0.15); color: var(--color-status-mitigating); }
+
+.badge-memory {
+  background: oklch(0.65 0.2 290 / 0.15);
+  color: var(--color-memory);
+}
+
+.badge-ai {
+  background: oklch(0.6 0.18 260 / 0.15);
+  color: var(--color-ai);
+}
+
+/* Log level colors */
+.log-error { color: var(--color-sev-1); }
+.log-warn { color: var(--color-sev-2); }
+.log-info { color: var(--color-text-secondary); }
+.log-debug { color: var(--color-text-muted); }
+
+/* Code blocks */
+.code-block {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+/* Button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: var(--color-brand-500);
+  color: white;
+}
+.btn-primary:hover {
+  background: var(--color-brand-400);
+}
+
+.btn-secondary {
+  background: var(--color-surface-3);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+}
+.btn-secondary:hover {
+  background: var(--color-surface-4);
+  border-color: var(--color-border-default);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+.btn-ghost:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+.btn-danger {
+  background: oklch(0.55 0.2 25);
+  color: white;
+}
+.btn-danger:hover {
+  background: oklch(0.6 0.22 25);
+}
+
+.btn-memory {
+  background: oklch(0.55 0.2 290 / 0.2);
+  color: var(--color-memory);
+  border: 1px solid oklch(0.55 0.2 290 / 0.3);
+}
+.btn-memory:hover {
+  background: oklch(0.55 0.2 290 / 0.3);
+}
+
+/* Form inputs */
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--color-brand-400);
+  box-shadow: 0 0 0 1px var(--color-brand-400);
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Textarea */
+.textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.textarea:focus {
+  border-color: var(--color-brand-400);
+  box-shadow: 0 0 0 1px var(--color-brand-400);
+}
+
+/* Select */
+.select {
+  padding: 8px 12px;
+  background: var(--color-surface-0);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.select:focus {
+  border-color: var(--color-brand-400);
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slide-in-right 0.3s ease-out;
+  backdrop-filter: blur(12px);
+  border: 1px solid;
+  min-width: 280px;
+  max-width: 420px;
+}
+
+.toast-success {
+  background: oklch(0.3 0.1 155 / 0.9);
+  border-color: oklch(0.5 0.15 155 / 0.5);
+  color: oklch(0.85 0.1 155);
+}
+
+.toast-error {
+  background: oklch(0.3 0.1 25 / 0.9);
+  border-color: oklch(0.5 0.15 25 / 0.5);
+  color: oklch(0.85 0.15 25);
+}
+
+.toast-info {
+  background: oklch(0.3 0.05 250 / 0.9);
+  border-color: oklch(0.5 0.1 250 / 0.5);
+  color: oklch(0.85 0.05 250);
+}
+
+.toast-memory {
+  background: oklch(0.25 0.1 290 / 0.9);
+  border-color: oklch(0.5 0.15 290 / 0.5);
+  color: oklch(0.85 0.15 290);
+}
+
+/* ============================================================
+   Layout
+   ============================================================ */
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 56px 1fr;
+  min-height: 100vh;
+}
+
+.app-sidebar {
+  grid-row: 1 / -1;
+  background: var(--color-surface-1);
+  border-right: 1px solid var(--color-border-subtle);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.app-topbar {
+  background: var(--color-surface-1);
+  border-bottom: 1px solid var(--color-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.app-main {
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+  .app-sidebar {
+    display: none;
+  }
+}
+
+/* ============================================================
+   Memory Glow effect
+   ============================================================ */
+
+.memory-glow {
+  position: relative;
+}
+
+.memory-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, oklch(0.6 0.2 290 / 0.3), oklch(0.55 0.2 260 / 0.3));
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.memory-glow:hover::before {
+  opacity: 1;
+}
+
+/* Confidence indicators */
+.confidence-high { color: var(--color-status-resolved); }
+.confidence-medium { color: var(--color-status-investigating); }
+.confidence-low { color: var(--color-text-muted); }
+
+/* ============================================================
+   Chat Interface — Glassmorphism
+   ============================================================ */
+
+.chat-header {
+  background: oklch(0.16 0.01 250 / 0.85);
+  backdrop-filter: blur(16px);
+}
+
+.chat-status-pill {
+  background: oklch(0.2 0.02 250 / 0.6);
+  border: 1px solid oklch(0.3 0.02 250 / 0.5);
+  border-radius: 9999px;
+  backdrop-filter: blur(8px);
+}
+
+/* Agent chat bubble */
+.agent-bubble {
+  background: oklch(0.17 0.01 250 / 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.28 0.02 250 / 0.5);
+  border-radius: 16px 16px 16px 4px;
+}
+
+/* User chat bubble */
+.user-bubble {
+  background: linear-gradient(135deg, oklch(0.45 0.15 255), oklch(0.4 0.18 260));
+  color: white;
+  border: none;
+}
+
+/* Chat composer */
+.chat-composer {
+  background: oklch(0.14 0.01 250 / 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid oklch(0.28 0.02 250 / 0.5);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-composer:focus-within {
+  border-color: oklch(0.55 0.15 255 / 0.6);
+  box-shadow: 0 0 0 2px oklch(0.55 0.15 255 / 0.15);
+}
+
+/* Send button */
+.send-btn {
+  background: linear-gradient(135deg, oklch(0.55 0.2 255), oklch(0.5 0.22 260));
+  color: white;
+  box-shadow: 0 2px 8px oklch(0.55 0.2 255 / 0.3);
+}
+
+.send-btn:hover:not(:disabled) {
+  box-shadow: 0 4px 12px oklch(0.55 0.2 255 / 0.5);
+  transform: translateY(-1px);
+}
+
+/* Suggestion chips */
+.suggestion-chip {
+  background: oklch(0.18 0.01 250 / 0.7);
+  border-color: oklch(0.3 0.02 250 / 0.5);
+  color: var(--color-text-secondary);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.suggestion-chip:hover:not(:disabled) {
+  background: oklch(0.22 0.02 255 / 0.7);
+  border-color: oklch(0.55 0.15 255 / 0.5);
+  color: oklch(0.75 0.1 255);
+}
+
+/* Typing indicator */
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-brand-400);
+  animation: typingBounce 1.2s ease-in-out infinite;
+}
+
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
+
+/* Collapsible sections inside agent messages */
+.collapsible-section {
+  background: oklch(0.14 0.01 250 / 0.6);
+  border: 1px solid oklch(0.25 0.01 250 / 0.5);
+}
+
+/* Evidence card inside agent messages */
+.evidence-card {
+  background: oklch(0.14 0.02 290 / 0.15);
+  border: 1px solid oklch(0.55 0.2 290 / 0.2);
+  transition: border-color 0.2s;
+}
+
+.evidence-card:hover {
+  border-color: oklch(0.55 0.2 290 / 0.5);
+}
+
+/* Context cards (left sidebar) */
+.context-card {
+  background: oklch(0.16 0.01 250 / 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid oklch(0.25 0.01 250 / 0.5);
+  transition: border-color 0.2s;
+}
+
+.context-card:hover {
+  border-color: oklch(0.3 0.02 250 / 0.7);
+}
+
+/* Memory cards (right sidebar) */
+.memory-card {
+  background: oklch(0.16 0.02 280 / 0.5);
+  backdrop-filter: blur(8px);
+  border: 1px solid oklch(0.55 0.2 290 / 0.2);
+  transition: all 0.3s;
+}
+
+.memory-card:hover {
+  border-color: oklch(0.55 0.2 290 / 0.5);
+  box-shadow: 0 0 16px oklch(0.55 0.2 290 / 0.15);
+}
+
+/* Recall empty state */
+.recall-empty {
+  background: oklch(0.14 0.01 250 / 0.5);
+  border: 1px dashed oklch(0.3 0.02 250 / 0.5);
+}
+
+/* Chat scrollbar */
+.chat-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.chat-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.3 0.01 250 / 0.5);
+  border-radius: 2px;
+}
+
+/* ── Light mode overrides ── */
+
+html.light .chat-header {
+  background: oklch(0.97 0.01 250 / 0.85);
+}
+
+html.light .chat-status-pill {
+  background: oklch(0.94 0.02 250 / 0.7);
+  border-color: oklch(0.88 0.02 250 / 0.8);
+}
+
+html.light .agent-bubble {
+  background: oklch(0.97 0.01 250 / 0.9);
+  border-color: oklch(0.88 0.02 250 / 0.8);
+}
+
+html.light .user-bubble {
+  background: linear-gradient(135deg, oklch(0.55 0.18 255), oklch(0.5 0.2 260));
+}
+
+html.light .chat-composer {
+  background: oklch(0.98 0.01 250 / 0.9);
+  border-color: oklch(0.88 0.02 250 / 0.8);
+}
+
+html.light .suggestion-chip {
+  background: oklch(0.97 0.01 250 / 0.8);
+  border-color: oklch(0.88 0.02 250 / 0.8);
+  color: var(--color-text-secondary);
+}
+
+html.light .suggestion-chip:hover:not(:disabled) {
+  background: oklch(0.94 0.02 255 / 0.8);
+  border-color: oklch(0.55 0.15 255 / 0.5);
+}
+
+html.light .collapsible-section {
+  background: oklch(0.96 0.01 250 / 0.7);
+  border-color: oklch(0.9 0.02 250 / 0.8);
+}
+
+html.light .evidence-card {
+  background: oklch(0.95 0.02 290 / 0.15);
+  border-color: oklch(0.55 0.2 290 / 0.2);
+}
+
+html.light .context-card {
+  background: oklch(0.97 0.01 250 / 0.85);
+  border-color: oklch(0.9 0.02 250 / 0.8);
+}
+
+html.light .memory-card {
+  background: oklch(0.97 0.02 280 / 0.6);
+  border-color: oklch(0.55 0.2 290 / 0.2);
+}
+
+html.light .recall-empty {
+  background: oklch(0.97 0.01 250 / 0.6);
+  border-color: oklch(0.88 0.02 250 / 0.6);
+}
+
+html.light .send-btn {
+  background: linear-gradient(135deg, oklch(0.5 0.2 255), oklch(0.45 0.22 260));
+}
